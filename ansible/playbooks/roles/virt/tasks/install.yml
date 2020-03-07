@@ -1,0 +1,33 @@
+---
+- name: package | main - Install required packages
+  package:
+    pkg: "{{ item }}"
+    state: installed
+  with_items:
+    - virt-install
+    - libvirt-daemon-config-network
+    - libvirt-daemon-kvm
+    - qemu-kvm
+    - virt-top
+    - libguestfs-tools
+  become: true
+  tags: install
+
+- name: systemd | main - Enable & start libvirtd
+  systemd:
+    name: libvirtd
+    state: started
+    enabled: yes
+  become: true
+  tags: install
+
+- name: file | main - Create KVM directories structure
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  with_items:
+    - "{{ kvm_iso_dir }}"
+    - "{{ kvm_img_dir }}"
+  become: true
+  tags: install

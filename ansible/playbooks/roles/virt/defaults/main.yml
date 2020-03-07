@@ -1,0 +1,27 @@
+kvm_main_dir: /kvm
+kvm_iso_dir: "{{ kvm_main_dir }}/iso"
+kvm_img_dir: "{{ kvm_main_dir }}/img"
+
+ubuntu_xenial:
+  - name: "ubuntu-16.04"
+    url: "https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img"
+
+instances:
+  - name: "k8s-master"
+    base: "{{ ubuntu_xenial[0].name }}"
+    disk: 20G
+    vcpus: 2
+    memory: 4096
+    ip_address: "{{ k8s_master_ip }}"
+  - name: "k8s-worker-01"
+    base: "{{ ubuntu_xenial[0].name }}"
+    disk: 206G
+    vcpus: 2
+    memory: 8192
+    ip_address: "{{ k8s_worker_01_ip }}"
+  - name: "k8s-worker-02"
+    base: "{{ ubuntu_xenial[0].name }}"
+    disk: 206G
+    vcpus: 2
+    memory: 8192
+    ip_address: "{{ k8s_worker_02_ip }}"

@@ -1,0 +1,136 @@
+---
+- name: get_url | vms - Download image
+  get_url:
+    url: "{{ item.url }}"
+    dest: "{{ kvm_img_dir }}/{{ item.name }}.qcow2"
+  with_items: "{{ ubuntu_xenial }}"
+  become: true
+  tags: download
+
+- name: file | vms - Create directory for image & metadata
+  file:
+    path: "{{ kvm_img_dir }}/{{ item.name }}"
+    state: directory
+    mode: 0755
+  with_items: "{{ instances }}"
+  become: true
+  tags: config
+
+- name: file | vms - Create directory for cloud init ISO file
+  file:
+    path: "{{ kvm_iso_dir }}/{{ item.name }}"
+    state: directory
+    mode: 0755
+  with_items: "{{ instances }}"
+  become: true
+  tags: config
+
+- name: template | vms - Create meta-data file for host
+  template:
+    src: meta-data.j2
+    dest: "{{ kvm_img_dir }}/{{ item.name }}/meta-data"
+  with_items: "{{ instances }}"
+  become: true
+  tags: config
+
+- name: template | vms - Create meta-data file for user
+  template:
+    src: user-data.j2
+    dest: "{{ kvm_img_dir }}/{{ item.name }}/user-data"
+  with_items: "{{ instances }}"
+  become: true
+  tags: config
+
+- name: command | vms - Create image for VM
+  command: "qemu-img create -f qcow2 -o backing_file={{ kvm_img_dir }}/{{ item.base }}.qcow2 {{ kvm_img_dir }}/{{ item.name }}/{{ item.name }}.qcow2"
+  with_items: "{{ instances }}"
+  become: true
+  tags: create
+
+- name: command | vms - Resize image for VM
+  command: "qemu-img resize {{ kvm_img_dir }}/{{ item.name }}/{{ item.name }}.qcow2 {{ item.disk }}"
+  with_items: "{{ instances }}"
+  become: true
+  tags: create
+
+- name: command | vms - Create disk with cloud init configuration
+  shell: "genisoimage -output {{ kvm_iso_dir }}/{{ item.name }}/{{ item.name }}-cid.iso -volid cidata -joliet -rock user-data meta-data"
+  args:
+    chdir: "{{ kvm_img_dir }}/{{ item.name }}"
+  with_items: "{{ instances }}"
+  become: true
+  tags: create
+
+- name: command | vms - Create virtual machine instances
+  shell: |
+    virt-install \
+      --name {{ item.name }} \
+      --os-type linux \
+      --os-variant ubuntu16.04 \
+      --memory {{ item.memory }} \
+      --vcpus={{ item.vcpus }} \
+      --disk {{ kvm_iso_dir }}/{{ item.name }}/{{ item.name }}-cid.iso,device=cdrom \
+      --disk path={{ kvm_img_dir}}/{{ item.name }}/{{ item.name }}.qcow2,device=disk,bus=virtio,format=qcow2 \
+      --import \
+      --network network=default \
+      --noautoconsole
+  with_items: "{{ instances }}"
+  become: true
+  tags: create
+
+- name: shell | vms - Get mac-address to configure network
+  shell: "virsh dumpxml {{item.name}} | grep 'mac address' | egrep -io '[0-9a-f:]{17}'"
+  register: mac_address
+  ignore_errors: true
+  with_items: "{{ instances }}"
+  become: true
+  tags: create, delete, reload
+
+- name: shell | vms - Add static IP/mac-address to DHCP service
+  shell: "virsh net-update default add ip-dhcp-host \"<host mac='{{ item.stdout }}' name='{{ item.item.name }}' ip='{{ item.item.ip_address }}'/>\" --live --config"
+  args:
+    warn: false
+  when: "{{item.changed == true}}"
+  with_items: "{{mac_address.results}}"
+  become: true
+  tags: create
+
+- name: shell | vms - Restart instances to load static IP from DHCP service
+  shell: |
+    sleep 3
+    virsh shutdown {{ item.item.name }} > /dev/null 2>&1
+    sleep 3
+    virsh start {{ item.item.name }} > /dev/null 2>&1
+    sleep 5
+  when: "{{item.changed == true}}"
+  with_items: "{{mac_address.results}}"
+  become: true
+  tags: create, reload
+
+- name: shell | vms - Cleanup DHCP's mac-addresses
+  shell: "virsh net-update default delete ip-dhcp-host \"<host mac='{{ item.stdout }}' name='{{ item.item.name }}' ip='{{ item.item.ip_address }}'/>\" --live --config"
+  args:
+    warn: false
+  when: "{{item.changed == true}}"
+  with_items: "{{mac_address.results}}"
+  become: true
+  tags: delete
+
+- name: command | vms - Remove instances
+  shell: |
+    virsh shutdown {{ item.name }} > /dev/null 2>&1
+    sleep 3
+    virsh undefine {{ item.name }} > /dev/null 2>&1
+  with_items: "{{ instances }}"
+  become: true
+  tags: delete
+
+- name: command | vms - Cleanup host's instances
+  shell: |
+    rm -rf {{ kvm_iso_dir }}/{{ item.name }}
+    rm -rf {{ kvm_img_dir }}/{{ item.name }}
+  args:
+    warn: false
+  with_items: "{{ instances }}"
+  become: true
+  tags: delete

@@ -1,0 +1,55 @@
+---
+- name: shell | install - Update packages repositories
+  shell: |
+    apt-get update
+    apt upgrade -y
+  become: true
+  tags: install
+
+- name: command | install - Install docker
+  command: "apt install -y {{ item }}"
+  with_items:
+    - docker.io
+    - apt-transport-https
+    - curl
+  become: true
+  tags: install
+
+- name: shell | install - Install Google Cloud packages repository's gpg key
+  shell: curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+  become: true
+  tags: install
+
+- name: template | install - Add Google Cloud packages repository
+  template:
+    src: kubernetes.list.j2
+    dest: /etc/apt/sources.list.d/kubernetes.list
+  become: true
+  tags: install
+
+- name: command | install - Update repositories
+  command: apt-get update
+  become: true
+  tags: install
+
+- name: command | install - Install kubelet & kubeadm
+  command: "apt install -y {{ item }}"
+  with_items:
+    - kubelet
+    - kubeadm
+  become: true
+  tags: install
+
+- name: command | install - Install kubectl
+  command: "apt install -y kubectl"
+  become: true
+  when: ansible_host in groups['k8s_masters']
+  tags: install
+
+- name: service | install - Enable kubelet service
+  service:
+    name: kubelet
+    state: started
+    enabled: yes
+  become: true
+  tags: install

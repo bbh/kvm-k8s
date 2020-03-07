@@ -1,0 +1,73 @@
+---
+- name: shell | config - Initialize kubernetes api
+  shell: kubeadm init --apiserver-advertise-address="{{ k8s_master_ip }}" --pod-network-cidr="{{ k8s_subnet }}"
+  become: true
+  when: ansible_host in groups['k8s_masters']
+  tags: init
+
+- name: file | config - Create local .kube directory
+  file:
+    path: ~/.kube
+    state: directory
+  become_user: ubuntu
+  when: ansible_host in groups['k8s_masters']
+  tags: init
+
+- name: copy | config - Copy kubernetes config to local
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/ubuntu/.kube/config
+    remote_src: yes
+    owner: ubuntu
+    group: ubuntu
+  become: yes
+  when: ansible_host in groups['k8s_masters']
+  tags: init
+
+- name: shell | config - Apply calico network
+  shell: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+  environment:
+    KUBECONFIG: /home/ubuntu/.kube/config
+  become_user: ubuntu
+  when: ansible_host in groups['k8s_masters']
+  tags: init
+
+- name: shell | config - Generate join command
+  shell: kubeadm token create --print-join-command 2>/dev/null
+  become: true
+  register: join_command
+  when: ansible_host in groups['k8s_masters']
+  tags: join
+
+- name: debug | config - Print out join command
+  debug:
+    msg: "{{ join_command.stdout_lines[0] }}"
+  when: ansible_host in groups['k8s_masters']
+  tags: join
+
+- name: local_action | config - Copy join command to local file
+  local_action: copy content="{{ join_command.stdout_lines[0] }}" dest="./join-command"
+  when: ansible_host not in groups['k8s_workers']
+  ignore_errors: yes
+  any_errors_fatal: false
+  tags: join
+
+- name: copy | config - Copy the join command to the worker nodes
+  copy: src=join-command dest=/tmp/join-command.sh mode=0777
+  become: true
+  when: ansible_host in groups['k8s_workers']
+  tags: join
+
+- name: local_action | config - Remove local join command file
+  local_action:
+    module: file
+    path: "./join-command"
+    state: absent
+  when: ansible_host not in groups['k8s_workers']
+  tags: join
+
+- name: command | config - Join the worker node to cluster
+  command: sh /tmp/join-command.sh
+  become: true
+  when: ansible_host in groups['k8s_workers']
+  tags: join

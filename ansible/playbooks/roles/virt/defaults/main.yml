@@ -9,19 +9,25 @@ ubuntu_xenial:
 instances:
   - name: "k8s-master"
     base: "{{ ubuntu_xenial[0].name }}"
-    disk: 20G
+    disk: 64G
     vcpus: 2
     memory: 4096
-    ip_address: "{{ k8s_master_ip }}"
+    ip_address: "{{ k8s_node_00_ip }}"
   - name: "k8s-worker-01"
     base: "{{ ubuntu_xenial[0].name }}"
-    disk: 206G
+    disk: 512G
     vcpus: 2
     memory: 8192
-    ip_address: "{{ k8s_worker_01_ip }}"
+    ip_address: "{{ k8s_node_01_ip }}"
   - name: "k8s-worker-02"
     base: "{{ ubuntu_xenial[0].name }}"
-    disk: 206G
+    disk: 512G
     vcpus: 2
     memory: 8192
-    ip_address: "{{ k8s_worker_02_ip }}"
+    ip_address: "{{ k8s_node_02_ip }}"
+  - name: "k8s-worker-03"
+    base: "{{ ubuntu_xenial[0].name }}"
+    disk: 506G
+    vcpus: 2
+    memory: 8192
+    ip_address: "{{ k8s_node_03_ip }}"

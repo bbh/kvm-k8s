@@ -1,6 +1,6 @@
 ---
 - name: shell | config - Initialize kubernetes api
-  shell: kubeadm init --apiserver-advertise-address="{{ k8s_master_ip }}" --pod-network-cidr="{{ k8s_subnet }}"
+  shell: kubeadm init --apiserver-advertise-address="{{ k8s_node_00_ip }}" --pod-network-cidr="{{ k8s_subnet }}"
   become: true
   when: ansible_host in groups['k8s_masters']
   tags: init

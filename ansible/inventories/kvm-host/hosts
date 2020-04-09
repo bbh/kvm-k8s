@@ -5,6 +5,8 @@ kvm-host
 k8s-master
 
 [k8s_workers]
+k8s-worker-01
+k8s-worker-02
 k8s-worker-03
 
 [k8s_nodes:children]

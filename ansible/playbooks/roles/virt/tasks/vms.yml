@@ -97,9 +97,9 @@
 
 - name: shell | vms - Restart instances to load static IP from DHCP service
   shell: |
-    sleep 3
+    sleep 5
     virsh shutdown {{ item.item.name }} > /dev/null 2>&1
-    sleep 3
+    sleep 5
     virsh start {{ item.item.name }} > /dev/null 2>&1
     sleep 5
   when: "{{item.changed == true}}"
@@ -107,7 +107,7 @@
   become: true
   tags: create, reload
 
-- name: shell | vms - Cleanup DHCP's mac-addresses
+- name: shell | vms - Cleanup DHCPs mac-addresses
   shell: "virsh net-update default delete ip-dhcp-host \"<host mac='{{ item.stdout }}' name='{{ item.item.name }}' ip='{{ item.item.ip_address }}'/>\" --live --config"
   args:
     warn: false
@@ -125,7 +125,7 @@
   become: true
   tags: delete
 
-- name: command | vms - Cleanup host's instances
+- name: command | vms - Cleanup hosts instances
   shell: |
     rm -rf {{ kvm_iso_dir }}/{{ item.name }}
     rm -rf {{ kvm_img_dir }}/{{ item.name }}

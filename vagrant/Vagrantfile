@@ -1,0 +1,53 @@
+k8s_master_ip = '10.0.70.10'
+k8s_worker_01_ip = '10.0.70.11'
+k8s_worker_02_ip = '10.0.70.12'
+
+$script = <<SCRIPT
+if [ ! -d /home/vagrant/.ssh ]; then mkdir /home/vagrant/.ssh; fi
+echo $(cat /vagrant/tmp/id_rsa.pub) >> /home/vagrant/.ssh/authorized_keys
+chmod 600 /home/vagrant/.ssh/authorized_keys && chmod 700 /home/vagrant/.ssh
+sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.5 0
+SCRIPT
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "ubuntu/xenial64"
+  config.vm.box_check_update = false
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.gui = false
+    vb.memory = "2048"
+    vb.cpus = 2
+  end
+
+  if Vagrant.has_plugin?("vagrant-cachier")
+    config.cache.scope = :machine
+    config.cache.auto_detect = false
+    config.cache.enable :gem
+    config.cache.enable :npm
+    config.cache.enable :apt
+  end
+
+  config.vm.define "router" do |rt|
+    rt.vm.box = "eugenmayer/opnsense"
+  end
+
+  config.vm.define "k8s-master" do |km|
+    km.vm.hostname = "vk8s-master"
+    km.vm.network "private_network", ip: k8s_master_ip
+    km.vm.provision "shell", inline: $script
+  end
+
+  config.vm.define "k8s-worker-01" do |w01|
+    w01.vm.hostname = "vk8s-worker-01"
+    w01.vm.network "private_network", ip: k8s_worker_01_ip
+    w01.vm.provision "shell", inline: $script
+  end
+
+  config.vm.define "k8s-worker-02" do |w02|
+    w02.vm.hostname = "vk8s-worker-02"
+    w02.vm.network "private_network", ip: k8s_worker_02_ip
+    w02.vm.provision "shell", inline: $script
+  end
+
+end

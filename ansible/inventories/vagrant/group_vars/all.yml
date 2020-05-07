@@ -1,0 +1,5 @@
+k8s_subnet: "10.0.70.0/16"
+k8s_node_00_ip: "10.0.70.10"
+k8s_node_01_ip: "10.0.70.11"
+k8s_node_02_ip: "10.0.70.12"
+os_username: "vagrant"

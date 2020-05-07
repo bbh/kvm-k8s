@@ -9,7 +9,7 @@
   file:
     path: ~/.kube
     state: directory
-  become_user: ubuntu
+  become_user: "{{ os_username }}"
   when: ansible_host in groups['k8s_masters']
   tags: init
 
@@ -18,8 +18,8 @@
     src: /etc/kubernetes/admin.conf
     dest: /home/ubuntu/.kube/config
     remote_src: yes
-    owner: ubuntu
-    group: ubuntu
+    owner: "{{ os_username }}"
+    group: "{{ os_username }}"
   become: yes
   when: ansible_host in groups['k8s_masters']
   tags: init
@@ -28,7 +28,7 @@
   shell: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
   environment:
     KUBECONFIG: /home/ubuntu/.kube/config
-  become_user: ubuntu
+  become_user: "{{ os_username }}"
   when: ansible_host in groups['k8s_masters']
   tags: init
 

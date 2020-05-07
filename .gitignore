@@ -1,4 +1,6 @@
 .git
+.idea
 ansible/tmp
-.vagrant
 *.retry
+.vagrant
+vagrant/tmp

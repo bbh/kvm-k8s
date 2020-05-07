@@ -1,0 +1,13 @@
+[main_host]
+vkvm-host
+
+[k8s_masters]
+vk8s-master
+
+[k8s_workers]
+vk8s-worker-01
+vk8s-worker-02
+
+[k8s_nodes:children]
+k8s_masters
+k8s_workers

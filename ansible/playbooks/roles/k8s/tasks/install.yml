@@ -15,7 +15,7 @@
   become: true
   tags: install
 
-- name: shell | install - Install Google Cloud packages repository's gpg key
+- name: shell | install - Install Google Cloud packages repositorys gpg key
   shell: curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
   become: true
   tags: install

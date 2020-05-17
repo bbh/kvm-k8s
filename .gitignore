@@ -4,3 +4,4 @@ ansible/tmp
 *.retry
 .vagrant
 vagrant/tmp
+vagrant/*.log

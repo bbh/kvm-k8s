@@ -11,26 +11,26 @@
     state: directory
   become_user: "{{ os_username }}"
   when: ansible_host in groups['k8s_masters']
-  tags: init
+  tags: init, config
 
 - name: copy | config - Copy kubernetes config to local
   copy:
     src: /etc/kubernetes/admin.conf
-    dest: /home/ubuntu/.kube/config
+    dest: "/home/{{ os_username }}/.kube/config"
     remote_src: yes
     owner: "{{ os_username }}"
     group: "{{ os_username }}"
   become: yes
   when: ansible_host in groups['k8s_masters']
-  tags: init
+  tags: init, config
 
 - name: shell | config - Apply calico network
   shell: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
   environment:
-    KUBECONFIG: /home/ubuntu/.kube/config
+    KUBECONFIG: "/home/{{ os_username }}/.kube/config"
   become_user: "{{ os_username }}"
   when: ansible_host in groups['k8s_masters']
-  tags: init
+  tags: init, config
 
 - name: shell | config - Generate join command
   shell: kubeadm token create --print-join-command 2>/dev/null

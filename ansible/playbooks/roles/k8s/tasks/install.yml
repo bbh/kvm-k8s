@@ -46,6 +46,16 @@
   when: ansible_host in groups['k8s_masters']
   tags: install
 
+- name: template | install - Configure kubelet service
+  template:
+    src: kubeadm.conf.j2
+    dest: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+    mode: 0640
+    owner: root
+    group: root
+  become: true
+  tags: install
+
 - name: service | install - Enable kubelet service
   service:
     name: kubelet

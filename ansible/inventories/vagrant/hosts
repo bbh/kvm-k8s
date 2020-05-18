@@ -5,8 +5,8 @@ vkvm-host
 vk8s-master
 
 [k8s_workers]
-vk8s-worker-01
-vk8s-worker-02
+vk8s-worker-1
+vk8s-worker-2
 
 [k8s_nodes:children]
 k8s_masters
